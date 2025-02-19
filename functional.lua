@@ -52,7 +52,7 @@ end
 
 --- Performs a functional mapping.
 ---@param obj (table) The table to map over.
----@param func (fcuntion(value, key) -> any) The mapping function. Defaults to `f.id`.
+---@param func (function(value, key) -> any) The mapping function. Defaults to `f.id`.
 ---@param f_pairs pairs The method to iterate over `obj`. Defaults to `pairs`. 
 function f.map(obj, func, f_pairs)
     func = func or f.id
