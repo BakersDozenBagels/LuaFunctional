@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.0
+---@version 1.1
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
