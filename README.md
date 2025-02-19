@@ -19,3 +19,14 @@ Additionally, `F.lazy` is defined with a nearly identical interface to `F` (chan
 
 - `F.lazy.range` has `max` default to infinity instead of `1`.
 - `F.lazy.to_eager(obj)` exists.
+
+# Example usage
+
+```lua
+local list = F.lazy.range() -- 1..infinity
+print(list[6]) -- 6
+local squares = F.lazy.map(list, function(x) return x * x end)
+print(squares[5]) -- 25
+local has_eighty_one = F.any(squares, function(x) return x == 81 end)
+print(has_eighty_one) -- true
+```
