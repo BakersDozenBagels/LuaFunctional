@@ -12,6 +12,9 @@ Defines `F`, a namespace for several list functions:
 - `F.slice(obj, start, _end, f_pairs)`
 - `F.id(...)`
 - `F.index(obj)`
+- `F.foreach(obj, func, f_pairs)`
+- `f.merge(a, b, f_pairs_a, f_pairs_b)`
+- `f.concat(a, b, f_pairs_a, f_pairs_b)`
 
 # Lazy sequences
 

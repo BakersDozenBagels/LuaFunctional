@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.1
+---@version 1.2
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
@@ -168,6 +168,59 @@ function f.index(obj)
     return function(i)
         return obj[i]
     end
+end
+
+--- Runs a function on every value in the table.
+---@param obj (table) The table to use.
+---@param func (function(value, key) -> any) The function to run. Defaults to `f.id`.
+---@param f_pairs pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@return The original table unchanged.
+function f.foreach(obj, func, f_pairs)
+    func = func or f.id
+    f_pairs = f_pairs or pairs
+    for k, v in f_pairs(obj) do
+        func(v, k)
+    end
+    return obj
+end
+
+--- Merges two tables.
+---@param a (table) The first table.
+---@param b (table) The second table.
+---@param f_pairs_a pairs The method to iterate over `a`. Defaults to `pairs`.
+---@param f_pairs_b pairs The method to iterate over `b`. Defaults to `pairs`.
+function f.merge(a, b, f_pairs_a, f_pairs_b)
+    f_pairs_a = f_pairs_a or pairs
+    f_pairs_b = f_pairs_b or pairs
+    local ret = {}
+    for k, v in f_pairs_a(a) do
+        ret[k] = v
+    end
+    for k, v in f_pairs_b(b) do
+        ret[k] = v
+    end
+    return ret
+end
+
+--- Concatenates two tables into a numerically-indexed table.
+---@param a (table) The first table.
+---@param b (table) The second table.
+---@param f_pairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
+---@param f_pairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
+function f.concat(a, b, f_pairs_a, f_pairs_b)
+    f_pairs_a = f_pairs_a or pairs
+    f_pairs_b = f_pairs_b or pairs
+    local ret = {}
+    local i = 1
+    for k, v in f_pairs_a(a) do
+        ret[i] = v
+        i = i + 1
+    end
+    for k, v in f_pairs_b(b) do
+        ret[i] = v
+        i = i + 1
+    end
+    return ret
 end
 
 --- Generates a table like {4, 5, 6, 7}.
@@ -371,6 +424,38 @@ end
 f.lazy.id = f.id
 f.lazy.count = f.count
 f.lazy.index = f.index
+
+--- Eagerly runs a function on every value in the table.
+---@param obj (table) The table to use.
+---@param func (function(value, key) -> any) The function to run. Defaults to `f.id`.
+---@param f_pairs pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@return The original table unchanged.
+function f.lazy.foreach(obj, func, f_pairs)
+    func = func or f.id
+    f_pairs = f_pairs or pairs
+    for k, v in f_pairs(obj) do
+        func(v, k)
+    end
+    return obj
+end
+
+--- Merges two tables.
+---@param a (table) The first table.
+---@param b (table) The second table.
+---@param f_pairs_a pairs The method to iterate over `a`. Defaults to `pairs`.
+---@param f_pairs_b pairs The method to iterate over `b`. Defaults to `pairs`.
+function f.lazy.merge(a, b, f_pairs_a, f_pairs_b)
+    error("Not implemented")
+end
+
+--- Concatenates two tables into a numerically-indexed table.
+---@param a (table) The first table.
+---@param b (table) The second table.
+---@param f_pairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
+---@param f_pairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
+function f.lazy.concat(a, b, f_pairs_a, f_pairs_b)
+    error("Not implemented")
+end
 
 --- Eagerly evaluates a lazy sequence.
 --- The sequence will no longer use a metatable.
