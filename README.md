@@ -4,17 +4,17 @@ Defines `F`, a namespace for several list functions:
 - `F.count(obj)`
 - `F.range(min, max, step)`
 - `F.map(obj, func, f_pairs)`
-- `F.reduce(obj, seed, func, f_pairs)`
+- `F.reduce(obj, seed, func, f_ipairs)`
 - `F.any(obj, func, f_pairs)`
 - `F.all(obj, func, f_pairs)`
 - `F.none(obj, func, f_pairs)`
 - `F.filter(obj, func, f_pairs)`
-- `F.slice(obj, start, _end, f_pairs)`
+- `F.slice(obj, start, _end, f_ipairs)`
 - `F.id(...)`
 - `F.index(obj)`
 - `F.foreach(obj, func, f_pairs)`
 - `f.merge(a, b, f_pairs_a, f_pairs_b)`
-- `f.concat(a, b, f_pairs_a, f_pairs_b)`
+- `f.concat(a, b, f_ipairs_a, f_ipairs_b)`
 
 # Lazy sequences
 

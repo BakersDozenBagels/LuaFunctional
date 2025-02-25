@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.2
+---@version 1.2.1
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
@@ -68,11 +68,11 @@ end
 ---@param obj (table) The table to reduce.
 ---@param seed (any) The initial value for the accumulator. By default, uses the first value in `obj` (and skips reducing that index).
 ---@param func (function(accumulator, value, key) -> accumulator) The reduction function.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
-function f.reduce(obj, seed, func, f_pairs)
-    f_pairs = f_pairs or ipairs
+---@param f_ipairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+function f.reduce(obj, seed, func, f_ipairs)
+    f_ipairs = f_ipairs or ipairs
     local ret = seed
-    local it, table, first = f_pairs(obj)
+    local it, table, first = f_ipairs(obj)
     if not ret then
         first, ret = it()
     end
@@ -143,13 +143,13 @@ end
 ---@param obj (table) The table to filter.
 ---@param start (integer) The inclusive minimum index. Defaults to `1`.
 ---@param _end (integer) The inclusive maximum index. Defaults to infinity.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
-function f.slice(obj, start, _end, f_pairs)
-    f_pairs = f_pairs or ipairs
+---@param f_ipairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+function f.slice(obj, start, _end, f_ipairs)
+    f_ipairs = f_ipairs or ipairs
     start = start or 1
     local ret = {}
     local i = 1
-    for k, v in f_pairs(obj) do
+    for k, v in f_ipairs(obj) do
         if i >= start and (not _end or i <= _end) then
             ret[k] = v
         end
@@ -205,18 +205,18 @@ end
 --- Concatenates two tables into a numerically-indexed table.
 ---@param a (table) The first table.
 ---@param b (table) The second table.
----@param f_pairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
----@param f_pairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
-function f.concat(a, b, f_pairs_a, f_pairs_b)
-    f_pairs_a = f_pairs_a or pairs
-    f_pairs_b = f_pairs_b or pairs
+---@param f_ipairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
+---@param f_ipairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
+function f.concat(a, b, f_ipairs_a, f_ipairs_b)
+    f_ipairs_a = f_ipairs_a or ipairs
+    f_ipairs_b = f_ipairs_b or ipairs
     local ret = {}
     local i = 1
-    for k, v in f_pairs_a(a) do
+    for k, v in f_ipairs_a(a) do
         ret[i] = v
         i = i + 1
     end
-    for k, v in f_pairs_b(b) do
+    for k, v in f_ipairs_b(b) do
         ret[i] = v
         i = i + 1
     end
@@ -366,9 +366,9 @@ end
 ---@param obj (table) The table to filter.
 ---@param start (integer) The inclusive minimum index. Defaults to `1`.
 ---@param _end (integer) The inclusive maximum index. Defaults to infinity.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
-function f.slice(obj, start, _end, f_pairs)
-    f_pairs = f_pairs or pairs
+---@param f_ipairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+function f.slice(obj, start, _end, f_ipairs)
+    f_ipairs = f_ipairs or pairs
     start = start or 1
     if _end then
         _end = _end - start + 1
@@ -382,7 +382,7 @@ function f.slice(obj, start, _end, f_pairs)
 
             local function next(self, i)
                 if f_next == nil then
-                    f_next, f_obj, ix = f_pairs(obj)
+                    f_next, f_obj, ix = f_ipairs(obj)
                     for i = 2, start do
                         ix = f_next(f_obj, ix)
                     end
@@ -451,9 +451,9 @@ end
 --- Concatenates two tables into a numerically-indexed table.
 ---@param a (table) The first table.
 ---@param b (table) The second table.
----@param f_pairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
----@param f_pairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
-function f.lazy.concat(a, b, f_pairs_a, f_pairs_b)
+---@param f_ipairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
+---@param f_ipairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
+function f.lazy.concat(a, b, f_ipairs_a, f_ipairs_b)
     error("Not implemented")
 end
 
