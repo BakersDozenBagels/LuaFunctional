@@ -29,11 +29,11 @@ end
 --- Returns the number of keys in `obj`.
 ---@param obj table
 function f.count(obj)
-    local metatable = getmetatable(t)
+    local metatable = getmetatable(obj)
     if metatable and metatable.__len then
-        return metatable.__len(t)
+        return metatable.__len(obj)
     end
-    return #t
+    return #obj
 end
 
 --- Generates a table like {4, 5, 6, 7}.
@@ -89,7 +89,7 @@ end
 function f.any(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
-        if func(v, k) then
+        if not func or func(v, k) then
             return true
         end
     end
@@ -117,7 +117,7 @@ end
 function f.none(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
-        if func(v, k) then
+        if not func or func(v, k) then
             return false
         end
     end
