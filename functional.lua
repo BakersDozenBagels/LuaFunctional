@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.2.4
+---@version 1.2.5
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
@@ -84,7 +84,7 @@ end
 
 --- Returns `true` if and only if `func(obj[k])` is truthy for any `k`. Otherwise, returns false.
 ---@param obj (table) The table to reduce.
----@param func (function(value, key) -> bool) The predicate function.
+---@param func? (function(value, key) -> bool) The predicate function.
 ---@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
 function f.any(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
@@ -112,7 +112,7 @@ end
 
 --- Returns `true` if and only if `func(obj[k])` is falsy for all `k`. Otherwise, returns false.
 ---@param obj (table) The table to reduce.
----@param func (function(value, key) -> bool) The predicate function.
+---@param func? (function(value, key) -> bool) The predicate function.
 ---@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
 function f.none(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
