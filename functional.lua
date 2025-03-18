@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.2.3
+---@version 1.2.4
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
@@ -310,7 +310,7 @@ end
 
 --- Performs a functional mapping.
 ---@param obj (table) The table to map over.
----@param func? (fcuntion(value, key) -> any) The mapping function. Defaults to `f.id`.
+---@param func? (function(value, key) -> any) The mapping function. Defaults to `f.id`.
 ---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
 function f.lazy.map(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
