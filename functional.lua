@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.2.2
+---@version 1.2.3
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
@@ -37,9 +37,9 @@ function f.count(obj)
 end
 
 --- Generates a table like {4, 5, 6, 7}.
----@param min integer The inclusive lower bound of the range. Defaults to `1`.
----@param max integer The inclusive upper bound of the range. Defaults to `1`.
----@param step integer The step between elements. Defaults to `1`.
+---@param min? integer The inclusive lower bound of the range. Defaults to `1`.
+---@param max? integer The inclusive upper bound of the range. Defaults to `1`.
+---@param step? integer The step between elements. Defaults to `1`.
 function f.range(min, max, step)
     local ret = {}
     local ix = 1
@@ -52,8 +52,8 @@ end
 
 --- Performs a functional mapping.
 ---@param obj (table) The table to map over.
----@param func (function(value, key) -> any) The mapping function. Defaults to `f.id`.
----@param f_pairs pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param func? (function(value, key) -> any) The mapping function. Defaults to `f.id`.
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
 function f.map(obj, func, f_pairs)
     func = func or f.id
     f_pairs = f_pairs or pairs
@@ -66,9 +66,9 @@ end
 
 --- Performs a functional reduction.
 ---@param obj (table) The table to reduce.
----@param seed (any) The initial value for the accumulator. By default, uses the first value in `obj` (and skips reducing that index).
+---@param seed? (any) The initial value for the accumulator. By default, uses the first value in `obj` (and skips reducing that index).
 ---@param func (function(accumulator, value, key) -> accumulator) The reduction function.
----@param f_ipairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@param f_ipairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
 function f.reduce(obj, seed, func, f_ipairs)
     f_ipairs = f_ipairs or ipairs
     local ret = seed
@@ -85,7 +85,7 @@ end
 --- Returns `true` if and only if `func(obj[k])` is truthy for any `k`. Otherwise, returns false.
 ---@param obj (table) The table to reduce.
 ---@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
 function f.any(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
@@ -99,7 +99,7 @@ end
 --- Returns `true` if and only if `func(obj[k])` is truthy for all `k`. Otherwise, returns false.
 ---@param obj (table) The table to reduce.
 ---@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
 function f.all(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
@@ -113,7 +113,7 @@ end
 --- Returns `true` if and only if `func(obj[k])` is falsy for all `k`. Otherwise, returns false.
 ---@param obj (table) The table to reduce.
 ---@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
 function f.none(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
@@ -127,7 +127,7 @@ end
 --- Returns a new table with only the elements which pass a test.
 ---@param obj (table) The table to filter.
 ---@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
 function f.filter(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -141,9 +141,9 @@ end
 
 --- Returns a new table with only the elements in the specified inclusive range. Elements are renumbered.
 ---@param obj (table) The table to filter.
----@param start (integer) The inclusive minimum index. Defaults to `1`.
----@param _end (integer) The inclusive maximum index. Defaults to infinity.
----@param f_ipairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@param start? (integer) The inclusive minimum index. Defaults to `1`.
+---@param _end? (integer) The inclusive maximum index. Defaults to infinity.
+---@param f_ipairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
 function f.slice(obj, start, _end, f_ipairs)
     f_ipairs = f_ipairs or ipairs
     start = start or 1
@@ -172,8 +172,8 @@ end
 
 --- Runs a function on every value in the table.
 ---@param obj (table) The table to use.
----@param func (function(value, key) -> any) The function to run. Defaults to `f.id`.
----@param f_pairs pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param func? (function(value, key) -> any) The function to run. Defaults to `f.id`.
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
 ---@return The original table unchanged.
 function f.foreach(obj, func, f_pairs)
     func = func or f.id
@@ -187,8 +187,8 @@ end
 --- Merges two tables.
 ---@param a (table) The first table.
 ---@param b (table) The second table.
----@param f_pairs_a pairs The method to iterate over `a`. Defaults to `pairs`.
----@param f_pairs_b pairs The method to iterate over `b`. Defaults to `pairs`.
+---@param f_pairs_a? pairs The method to iterate over `a`. Defaults to `pairs`.
+---@param f_pairs_b? pairs The method to iterate over `b`. Defaults to `pairs`.
 function f.merge(a, b, f_pairs_a, f_pairs_b)
     f_pairs_a = f_pairs_a or pairs
     f_pairs_b = f_pairs_b or pairs
@@ -205,8 +205,8 @@ end
 --- Concatenates two tables into a numerically-indexed table.
 ---@param a (table) The first table.
 ---@param b (table) The second table.
----@param f_ipairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
----@param f_ipairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
+---@param f_ipairs_a? pairs The method to iterate over `a`. Defaults to `ipairs`.
+---@param f_ipairs_b? pairs The method to iterate over `b`. Defaults to `ipairs`.
 function f.concat(a, b, f_ipairs_a, f_ipairs_b)
     f_ipairs_a = f_ipairs_a or ipairs
     f_ipairs_b = f_ipairs_b or ipairs
@@ -225,7 +225,7 @@ end
 
 --- Returns the keys of a table indexed numerically.
 ---@param table (table) The table.
----@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
 function f.keys(table, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -237,7 +237,7 @@ end
 
 --- Returns the values of a table indexed numerically.
 ---@param table (table) The table.
----@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
 function f.values(table, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -250,7 +250,7 @@ end
 --- Returns the key-value pairs of a table indexed numerically.
 --- Each key-value pair is represented as `{ key, value, key=key, value=value }`.
 ---@param table (table) The table.
----@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
 function f.entries(table, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -266,9 +266,9 @@ function f.entries(table, f_pairs)
 end
 
 --- Generates a table like {4, 5, 6, 7}.
----@param min integer The inclusive lower bound of the range. Defaults to `1`.
----@param max integer The inclusive upper bound of the range. Defaults to no upper bound.
----@param step integer The step between elements. Defaults to `1`.
+---@param min? integer The inclusive lower bound of the range. Defaults to `1`.
+---@param max? integer The inclusive upper bound of the range. Defaults to no upper bound.
+---@param step? integer The step between elements. Defaults to `1`.
 function f.lazy.range(min, max, step)
     min = min or 1
     step = step or 1
@@ -310,8 +310,8 @@ end
 
 --- Performs a functional mapping.
 ---@param obj (table) The table to map over.
----@param func (fcuntion(value, key) -> any) The mapping function. Defaults to `f.id`.
----@param f_pairs pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param func? (fcuntion(value, key) -> any) The mapping function. Defaults to `f.id`.
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
 function f.lazy.map(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
 
@@ -359,7 +359,7 @@ f.lazy.none = f.none
 --- Returns a new table with only the elements which pass a test.
 ---@param obj (table) The table to filter.
 ---@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
 function f.lazy.filter(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
 
@@ -406,9 +406,9 @@ end
 
 --- Returns a new table with only the elements in the specified inclusive range. Elements are renumbered.
 ---@param obj (table) The table to filter.
----@param start (integer) The inclusive minimum index. Defaults to `1`.
----@param _end (integer) The inclusive maximum index. Defaults to infinity.
----@param f_ipairs (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@param start? (integer) The inclusive minimum index. Defaults to `1`.
+---@param _end? (integer) The inclusive maximum index. Defaults to infinity.
+---@param f_ipairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
 function f.slice(obj, start, _end, f_ipairs)
     f_ipairs = f_ipairs or pairs
     start = start or 1
@@ -469,8 +469,8 @@ f.lazy.index = f.index
 
 --- Eagerly runs a function on every value in the table.
 ---@param obj (table) The table to use.
----@param func (function(value, key) -> any) The function to run. Defaults to `f.id`.
----@param f_pairs pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param func? (function(value, key) -> any) The function to run. Defaults to `f.id`.
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
 ---@return The original table unchanged.
 function f.lazy.foreach(obj, func, f_pairs)
     func = func or f.id
@@ -484,8 +484,8 @@ end
 --- Merges two tables.
 ---@param a (table) The first table.
 ---@param b (table) The second table.
----@param f_pairs_a pairs The method to iterate over `a`. Defaults to `pairs`.
----@param f_pairs_b pairs The method to iterate over `b`. Defaults to `pairs`.
+---@param f_pairs_a? pairs The method to iterate over `a`. Defaults to `pairs`.
+---@param f_pairs_b? pairs The method to iterate over `b`. Defaults to `pairs`.
 function f.lazy.merge(a, b, f_pairs_a, f_pairs_b)
     error("Not implemented")
 end
@@ -493,22 +493,22 @@ end
 --- Concatenates two tables into a numerically-indexed table.
 ---@param a (table) The first table.
 ---@param b (table) The second table.
----@param f_ipairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
----@param f_ipairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
+---@param f_ipairs_a? pairs The method to iterate over `a`. Defaults to `ipairs`.
+---@param f_ipairs_b? pairs The method to iterate over `b`. Defaults to `ipairs`.
 function f.lazy.concat(a, b, f_ipairs_a, f_ipairs_b)
     error("Not implemented")
 end
 
 --- Returns the keys of a table indexed numerically.
 ---@param table (table) The table.
----@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
 function f.keys(table, f_pairs)
     error("Not implemented")
 end
 
 --- Returns the values of a table indexed numerically.
 ---@param table (table) The table.
----@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
 function f.values(table, f_pairs)
     error("Not implemented")
 end
@@ -516,7 +516,7 @@ end
 --- Returns the key-value pairs of a table indexed numerically.
 --- Each key-value pair is represented as `{ [1]=key, [2]=value, k=key, v=value }`.
 ---@param table (table) The table.
----@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
 function f.entries(table, f_pairs)
     error("Not implemented")
 end
