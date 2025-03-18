@@ -15,6 +15,9 @@ Defines `F`, a namespace for several list functions:
 - `F.foreach(obj, func, f_pairs)`
 - `f.merge(a, b, f_pairs_a, f_pairs_b)`
 - `f.concat(a, b, f_ipairs_a, f_ipairs_b)`
+- `f.keys(table, f_pairs)`
+- `f.values(table, f_pairs)`
+- `f.entries(table, f_pairs)`
 
 # Lazy sequences
 

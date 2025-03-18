@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.2.1
+---@version 1.2.2
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
@@ -219,6 +219,48 @@ function f.concat(a, b, f_ipairs_a, f_ipairs_b)
     for k, v in f_ipairs_b(b) do
         ret[i] = v
         i = i + 1
+    end
+    return ret
+end
+
+--- Returns the keys of a table indexed numerically.
+---@param table (table) The table.
+---@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+function f.keys(table, f_pairs)
+    f_pairs = f_pairs or pairs
+    local ret = {}
+    for k in f_pairs(table) do
+        ret[#ret + 1] = k
+    end
+    return ret
+end
+
+--- Returns the values of a table indexed numerically.
+---@param table (table) The table.
+---@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+function f.values(table, f_pairs)
+    f_pairs = f_pairs or pairs
+    local ret = {}
+    for _, v in f_pairs(table) do
+        ret[#ret + 1] = v
+    end
+    return ret
+end
+
+--- Returns the key-value pairs of a table indexed numerically.
+--- Each key-value pair is represented as `{ key, value, key=key, value=value }`.
+---@param table (table) The table.
+---@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+function f.entries(table, f_pairs)
+    f_pairs = f_pairs or pairs
+    local ret = {}
+    for k, v in f_pairs(table) do
+        ret[#ret + 1] = {
+            k,
+            v,
+            key = k,
+            value = v
+        }
     end
     return ret
 end
@@ -454,6 +496,28 @@ end
 ---@param f_ipairs_a pairs The method to iterate over `a`. Defaults to `ipairs`.
 ---@param f_ipairs_b pairs The method to iterate over `b`. Defaults to `ipairs`.
 function f.lazy.concat(a, b, f_ipairs_a, f_ipairs_b)
+    error("Not implemented")
+end
+
+--- Returns the keys of a table indexed numerically.
+---@param table (table) The table.
+---@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+function f.keys(table, f_pairs)
+    error("Not implemented")
+end
+
+--- Returns the values of a table indexed numerically.
+---@param table (table) The table.
+---@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+function f.values(table, f_pairs)
+    error("Not implemented")
+end
+
+--- Returns the key-value pairs of a table indexed numerically.
+--- Each key-value pair is represented as `{ [1]=key, [2]=value, k=key, v=value }`.
+---@param table (table) The table.
+---@param f_pairs pairs The method to iterate over `table`. Defaults to `pairs`.
+function f.entries(table, f_pairs)
     error("Not implemented")
 end
 
