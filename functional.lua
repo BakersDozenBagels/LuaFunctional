@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.2.5
+---@version 1.2.6
 local f = {}
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
@@ -502,14 +502,14 @@ end
 --- Returns the keys of a table indexed numerically.
 ---@param table (table) The table.
 ---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
-function f.keys(table, f_pairs)
+function f.lazy.keys(table, f_pairs)
     error("Not implemented")
 end
 
 --- Returns the values of a table indexed numerically.
 ---@param table (table) The table.
 ---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
-function f.values(table, f_pairs)
+function f.lazy.values(table, f_pairs)
     error("Not implemented")
 end
 
@@ -517,7 +517,7 @@ end
 --- Each key-value pair is represented as `{ [1]=key, [2]=value, k=key, v=value }`.
 ---@param table (table) The table.
 ---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
-function f.entries(table, f_pairs)
+function f.lazy.entries(table, f_pairs)
     error("Not implemented")
 end
 
