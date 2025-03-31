@@ -1,8 +1,10 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 1.2.6
+---@version 2.0.0
+
 local f = {}
+---@deprecated
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
 F = f -- export as global; change this line as desired
 
@@ -160,14 +162,6 @@ end
 --- Identity function over any number of inputs.
 function f.id(...)
     return ...
-end
-
---- Helper function for indexing into a table.
----@param obj table
-function f.index(obj)
-    return function(i)
-        return obj[i]
-    end
 end
 
 --- Runs a function on every value in the table.
@@ -525,9 +519,464 @@ end
 --- The sequence will no longer use a metatable.
 ---@param obj table
 function f.lazy.to_eager(obj)
-    local metatable = getmetatable(t)
+    local metatable = getmetatable(obj)
     if metatable and metatable.__eager then
-        metatable.__eager(t)
+        metatable.__eager(obj)
     end
     return obj
 end
+
+---@generic K, V
+---@alias Next fun(self):K?, V?
+
+---@class Query<K, V>: metatable
+f._proto = {}
+
+if false then
+    --- Gets the next pair from this collection.
+    ---@type Next
+    function f._proto:next()
+        return 1, 2
+    end
+
+    --- Indicates whether this collection is numerically-indexed.
+    ---@type boolean
+    f._proto.numeric = false
+end
+
+--- Maps elements from this collection to new ones.
+---@generic K, V, U
+---@param func fun(value: V, key: K): U
+---@return Query<K, U>
+function f._proto:map(func)
+    return f._wrap(function()
+        local k, v = self:next()
+        if k == nil then
+            return k, v
+        end
+        return k, func(v, k)
+    end, self.numeric)
+end
+
+--- Maps elements from this collection to sequences of new ones.
+---@generic K, V, U
+---@param func fun(value: V, key: K): Query<K, U>
+---@return Query<K, U>
+function f._proto:flatmap(func)
+    return self
+        :map(func)
+        :map(function(x) return (x.pairs and f.bind(x.pairs, x) or (self.numeric and f.ipairs or f.pairs))(x) end)
+        :reduce(f.concat)
+end
+
+--- Performs a cross join on two queries.
+---@generic K1, V1, K2, V2, U
+---@param other Query<K2, V2>
+---@param func fun(v1: V1, v2: V2, k1: K1, k2: K2): U
+---@return Query<integer, U>
+function f._proto:join(other, func)
+    local ret = {}
+    for k1, v1 in self:pairs() do
+        for k2, v2 in other:pairs() do
+            ret[#ret + 1] = func(v1, v2, k1, k2)
+        end
+    end
+    return f.ipairs(ret)
+end
+
+--- Zips two queries together.
+---@generic V1, V2, U
+---@param other Query<integer, V2>
+---@param func fun(v1: V1, v2: V2, k: integer): U
+---@return Query<integer, U>
+function f._proto:zip(other, func)
+    if not self.numeric or not other.numeric then error("Zipping is only supported on two numerically-indexed queries", 2) end
+    return f._wrap(function()
+        local k1, v1 = self:next()
+        local k2, v2 = other:next()
+        if k1 == nil or k2 == nil then
+            return
+        end
+        if k1 ~= k2 then error("Keys are mismatched") end
+        return k1, func(v1, v2, k1)
+    end, true)
+end
+
+--- Reduces the collection to a single element. The seed is optional.
+---@generic K, V, A
+---@param seed A|fun(a: A, b: V, k: K): A
+---@param func? fun(a: A, b: V, k: K): A
+---@return A
+function f._proto:reduce(seed, func)
+    local k, v
+    if type(func) == 'nil' then
+        func = seed
+        k, seed = self:next()
+        if k == nil then
+            return seed
+        end
+    end
+    while true do
+        k, v = self:next()
+        if k == nil then
+            return seed
+        end
+        seed = func(seed, v, k)
+    end
+end
+
+--- Returns the first truthy element, or false if none exist.
+---@return boolean
+function f._proto:any()
+    for _, v in self:pairs() do
+        if v then
+            return v
+        end
+    end
+    return false
+end
+
+--- Returns the first falsy element, or true if none exist.
+---@return boolean
+function f._proto:all()
+    for _, v in self:pairs() do
+        if not v then
+            return v
+        end
+    end
+    return true
+end
+
+--- Filters elements in the collection to only those that match a given predicate.
+--- This will renumber the keys of a numerically-indexed collection.
+---@generic K, V
+---@param func fun(value: V, key: K): boolean
+---@return Query<K, V>
+function f._proto:filter(func)
+    if not func then
+        error("Expected a filter function", 2)
+    end
+    local ix = 0
+    return f._wrap(function()
+        local k, v
+        repeat
+            k, v = self:next()
+        until k == nil or func(v, k)
+        if k == nil or not self.numeric then
+            return k, v
+        end
+        ix = ix + 1
+        return ix, v
+    end, self.numeric)
+end
+
+--- Limits the query to the first n elements of the numerically-indexed collection.
+---@param n integer
+---@return Query
+function f._proto:take(n)
+    if not n or n < 0 then
+        error("Expected non-negative number", 2)
+    end
+    if not self.numeric then
+        error("Take is only supported for numerically-indexed tables", 2)
+    end
+    return f._wrap(function()
+        n = n - 1
+        if n >= 0 then
+            return self:next()
+        end
+    end, true)
+end
+
+--- Skips the first n elements of the numerically-indexed collection.
+---@param n integer
+---@return Query
+function f._proto:skip(n)
+    if not self.numeric then
+        error("Skip is only supported for numerically-indexed tables", 2)
+    end
+    for i = 1, n - 1 do
+        self:next()
+    end
+    local ix = 0
+    return f._wrap(function()
+        ix = ix + 1
+        local k, v = self:next()
+        if k ~= nil then
+            return ix, v
+        end
+    end, true)
+end
+
+--- Runs a function on every element in the collection in encounter order.
+---@generic K, V
+---@param func fun(value: V, key: K)
+function f._proto:foreach(func)
+    for k, v in self:pairs() do
+        func(v, k)
+    end
+end
+
+--- Appends another query to this one.
+---@see f.q_concat
+---@param other Query
+---@return Query
+function f._proto:prepend(other)
+    return f.q_concat(other, self)
+end
+
+--- Appends this query to another.
+---@see f.q_concat
+---@param other Query
+---@return Query
+function f._proto:append(other)
+    return f.q_concat(self, other)
+end
+
+--- Concatenates two queries.
+--- If both are numerically-indexed, the result is as well, and keys will be renumbered.
+--- Otherwise, the result will not be numerically-indexed, and keys will not be numbered.
+---@param a Query
+---@param b Query
+---@return Query
+function f.q_concat(a, b)
+    local ix, swap = 0, false
+    return f._wrap(function()
+        ix = ix + 1
+        local k, v = (swap and b or a):next()
+        if k == nil and not swap then
+            swap = true
+            k, v = b:next()
+        end
+        if k ~= nil then
+            return a.numeric and b.numeric and ix or k, v
+        end
+    end, a.numeric and b.numeric)
+end
+
+--- Returns a numerically-indexed query of this non-numerically-indexed query's keys.
+---@generic K
+---@return Query<integer, K>
+function f._proto:keys()
+    if self.numeric then
+        error("Keys is not supported on numerically-indexed tables", 2)
+    end
+    local ix = 0
+    return f._wrap(function()
+        local k = self:next()
+        if k ~= nil then
+            ix = ix + 1
+            return ix, k
+        end
+    end, true)
+end
+
+--- Returns a numerically-indexed query of this non-numerically-indexed query's values.
+---@generic V
+---@return Query<integer, V>
+function f._proto:values()
+    if self.numeric then
+        error("Values is not supported on numerically-indexed tables", 2)
+    end
+    local ix = 0
+    return f._wrap(function()
+        local k, v = self:next()
+        if k ~= nil then
+            ix = ix + 1
+            return ix, v
+        end
+    end, true)
+end
+
+--- Returns a numerically-indexed query of this query's key-value pairs.
+---@generic K, V
+---@return Query<integer, {[1]:K, [2]:V, k: K, v: V}>
+function f._proto:entries()
+    local ix = 0
+    return f._wrap(function()
+        local k, v = self:next()
+        if k ~= nil then
+            ix = ix + 1
+            return ix, {
+                k,
+                v,
+                k = k,
+                v = v
+            }
+        end
+    end, true)
+end
+
+--- Returns an identical query treated as non-numerically-indexed.
+---@return Query
+function f._proto:unordered()
+    if self.numeric then
+        error("Unordered is only supported on numerically-indexed tables", 2)
+    end
+    return f._wrap(self.next, false)
+end
+
+--- Returns an identical query treated as numerically-indexed.
+---@return Query
+function f._proto:ordered()
+    if self.numeric then
+        error("Ordered is not supported on numerically-indexed tables", 2)
+    end
+    return f._wrap(self.next, true)
+end
+
+--- Brings this query into the supplied order.
+---@generic K, V
+---@param func fun(v1: V, v2: V, k1: K, k2: K): boolean Less than function
+---@return Query<K, V>
+function f._proto:sorted(func)
+    local q = self.numeric and self:unordered() or self
+    local t = q:entries():into()
+    table.sort(t, function(a, b) return func(a.v, b.v, a.k, b.k) end)
+    local ix = 0
+    return f._wrap(function()
+        ix = ix + 1
+        local v = t[ix]
+        if v then
+            return v.k, v.v
+        end
+    end, true)
+end
+
+--- Joins the strings together with an optional separator.
+---@param separator? string
+---@return string
+function f._proto:conjoin(separator)
+    separator = separator or ''
+    ---@type string
+    return self:reduce(function(a, b) return tostring(a) .. separator .. tostring(b) end)
+end
+
+--- Converts the query to a string. Helpful for debugging.
+---@return string
+function f._proto:tostring()
+    return '{ ' .. self:map(function(v, k)
+        return '[' .. tostring(k) .. '] = ' .. tostring(v)
+    end):reduce(function(a, b)
+        return a .. ', ' .. b
+    end) .. ' }'
+end
+
+--- Converts the query to a table.
+---@return table
+function f._proto:into()
+    local ret = {}
+    for k, v in self.next do
+        ret[k] = v
+    end
+    return ret
+end
+
+--- Gets the iterator for this query.
+---@generic K, V
+---@return fun():K, V
+function f._proto:pairs()
+    return self.next
+end
+
+f._proto.ipairs = f._proto.pairs
+
+--- Applies query methods to a function.
+---@param func Next
+---@param numeric boolean
+---@return Query
+function f._wrap(func, numeric)
+    local val = {
+        next = func,
+        numeric = numeric
+    }
+    for k, v in pairs(f._proto) do
+        val[k] = v
+    end
+    return val
+end
+
+--- Generic query factory.
+--- @see f.pairs
+--- @see f.ipairs
+---@param obj table
+---@param f_pairs fun(t: table):unknown
+---@param numeric boolean
+---@return Query
+function f.from(obj, f_pairs, numeric)
+    local next, t, k = f_pairs(obj)
+    local v
+    return f._wrap(function()
+        k, v = next(t, k)
+        return k, v
+    end, numeric)
+end
+
+--- Creates a non-numerically-indexed query from the given table.
+---@param obj table
+---@return Query
+function f.pairs(obj)
+    return f.from(obj, pairs, false)
+end
+
+--- Creates a numerically-indexed query from the given table.
+---@param obj table
+---@return Query
+function f.ipairs(obj)
+    return f.from(obj, ipairs, true)
+end
+
+--- Creates a numerically-indexed query with the given range of numbers.
+---@param start integer
+---@param _end integer
+---@param step integer
+---@return Query
+function f.from_range(start, _end, step)
+    start = start or 1
+    _end = _end or 1
+    step = step or 1
+    local ix = 0
+    return f._wrap(function()
+        ix = ix + 1
+        local ret = start + (ix - 1) * step
+        if (_end > start and ret <= _end) or (_end < start and ret >= start) or (start == _end and ret == start) then
+            return ix, ret
+        end
+    end, true)
+end
+
+--- Binds a function with certain parameters.
+---@generic T
+---@param func fun(...):T
+---@param ... any
+---@return fun(...):T
+function f.bind(func, ...)
+    local args = { ... }
+    return function(...)
+        local arg = { ... }
+        for k, v in ipairs(args) do
+            arg[k] = v
+        end
+        return func(unpack(arg))
+    end
+end
+
+--- Returns x -> x[ix]
+---@param ix any
+---@return fun(any): any
+function f.index(ix)
+    return function(x)
+        return x[ix]
+    end
+end
+
+--- Returns x -> obj[x]
+---@param obj any
+---@return fun(any): any
+function f.index_into(obj)
+    return function(x)
+        return obj[x]
+    end
+end
+
+return f

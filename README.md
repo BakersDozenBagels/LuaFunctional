@@ -10,29 +10,76 @@ Defines `F`, a namespace for several list functions:
 - `F.none(obj, func, f_pairs)`
 - `F.filter(obj, func, f_pairs)`
 - `F.slice(obj, start, _end, f_ipairs)`
+- `F.bind(func, ...)`
 - `F.id(...)`
-- `F.index(obj)`
+- `F.index(ix)`
+- `F.index_into(obj)`
 - `F.foreach(obj, func, f_pairs)`
-- `f.merge(a, b, f_pairs_a, f_pairs_b)`
-- `f.concat(a, b, f_ipairs_a, f_ipairs_b)`
-- `f.keys(table, f_pairs)`
-- `f.values(table, f_pairs)`
-- `f.entries(table, f_pairs)`
+- `F.merge(a, b, f_pairs_a, f_pairs_b)`
+- `F.concat(a, b, f_ipairs_a, f_ipairs_b)`
+- `F.keys(table, f_pairs)`
+- `F.values(table, f_pairs)`
+- `F.entries(table, f_pairs)`
 
-# Lazy sequences
+# Fluent mode
 
-Additionally, `F.lazy` is defined with a nearly identical interface to `F` (changes listed below). Functions in `F.lazy` return *lazy sequences* instead of tables. Lazy sequences may be more performant than eager ones, but they cannot be serialized and deserialized, since they use metatables.
-
-- `F.lazy.range` has `max` default to infinity instead of `1`.
-- `F.lazy.to_eager(obj)` exists.
+Defines syntax for fluent queries:
+- `F.pairs(obj)`
+- `F.ipairs(obj)`
+- `F.from(obj, f_pairs, numeric)`
+- `F.from_range(start, _end, step)`
+- `F.q_concat(a, b)`
+- `q:map(func)`
+- `q:filter(func)`
+- `q:flatmap(func)`
+- `q:take(n)`
+- `q:skip(n)`
+- `q:keys()`
+- `q:values()`
+- `q:entries()`
+- `q:sorted(func)`
+- `q:append(other)`
+- `q:prepend(other)`
+- `q:join(other, func)`
+- `q:zip(other, func)`
+- `q:foreach(func)`
+- `q:reduce(seed, func)`
+- `q:conjoin(separator)`
+- `q:tostring()`
+- `q:into()`
+- `q:pairs()`
+- `q:any()`
+- `q:all()`
+- `q:unordered()`
+- `q:ordered()`
+- `q:next()`
+- `q.numeric`
 
 # Example usage
 
 ```lua
-local list = F.lazy.range() -- 1..infinity
-print(list[6]) -- 6
-local squares = F.lazy.map(list, function(x) return x * x end)
-print(squares[5]) -- 25
-local has_eighty_one = F.any(squares, function(x) return x == 81 end)
-print(has_eighty_one) -- true
+for k, v in 
+    F.from_range(1, 10) -- Query the integers from 1 to 10
+    :map(function(x) return x * x end) -- Square them
+    :filter(function(x) return x >= 20 end) -- Discard any squares less than 20
+    :pairs() -- Iterate over the query
+do
+    print(k, v)
+end
+
+local things = {
+    c = 3,
+    b = 2,
+    a = 1,
+    d = 4
+}
+-- `stuff` is a list of the keys of `things` sorted by their respective values
+local stuff = F.pairs(things) -- Query `things`
+    :sorted(function(a, b) return a < b end) -- Sort the query with the given function
+    :entries() -- Start working on key-value pairs
+    :map(F.index(1)) -- Select the keys from those key-value pairs (`:map(F.index('k'))` would do the same)
+    :into() -- Turn the result into a table
+for _, v in ipairs(stuff) do
+    print(v)
+end
 ```
