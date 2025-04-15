@@ -537,7 +537,7 @@ f._proto = {}
 if false then
     --- Gets the next pair from this collection.
     ---@type Next
-    function f._proto:next()
+    function f._proto.next()
         return 1, 2
     end
 
