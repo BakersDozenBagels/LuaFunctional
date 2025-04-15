@@ -53,7 +53,7 @@ Defines syntax for fluent queries:
 - `q:all()`
 - `q:unordered()`
 - `q:ordered()`
-- `q:next()`
+- `q.next()`
 - `q.numeric`
 
 # Example usage
