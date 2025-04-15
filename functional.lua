@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 2.0.1
+---@version 2.0.2
 
 local f = {}
 ---@deprecated
@@ -252,6 +252,8 @@ function f.entries(table, f_pairs)
         ret[#ret + 1] = {
             k,
             v,
+            k = k,
+            v = v,
             key = k,
             value = v
         }
