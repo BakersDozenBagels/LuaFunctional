@@ -44,6 +44,7 @@ Defines syntax for fluent queries:
 - `q:zip(other, func)`
 - `q:foreach(func)`
 - `q:reduce(seed, func)`
+- `q:count(func)`
 - `q:conjoin(separator)`
 - `q:tostring()`
 - `q:into()`

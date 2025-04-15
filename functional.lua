@@ -587,10 +587,11 @@ end
 --- Zips two queries together.
 ---@generic V1, V2, U
 ---@param other Query<integer, V2>
----@param func fun(v1: V1, v2: V2, k: integer): U
+---@param func? fun(v1: V1, v2: V2, k: integer): U Default to `function(...) return {...} end`
 ---@return Query<integer, U>
 function f._proto:zip(other, func)
     if not self.numeric or not other.numeric then error("Zipping is only supported on two numerically-indexed queries", 2) end
+    func = func or function(...) return {...} end
     return f._wrap(function()
         local k1, v1 = self:next()
         local k2, v2 = other:next()
@@ -645,6 +646,16 @@ function f._proto:all()
         end
     end
     return true
+end
+
+--- Count the number of entries in the sequence, optionally filtered by a function.
+---@generic K, V
+---@param func? fun(v: V, k: K):boolean
+---@return integer
+function f._proto:count(func)
+    local o = self
+    if func then o = o:filter(func) end
+    return o:reduce(0, function(x) return x + 1 end)
 end
 
 --- Filters elements in the collection to only those that match a given predicate.
@@ -927,9 +938,9 @@ function f.ipairs(obj)
 end
 
 --- Creates a numerically-indexed query with the given range of numbers.
----@param start integer
----@param _end integer
----@param step integer
+---@param start? integer
+---@param _end? integer
+---@param step? integer
 ---@return Query
 function f.from_range(start, _end, step)
     start = start or 1
