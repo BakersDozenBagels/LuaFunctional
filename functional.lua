@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 2.0.2
+---@version 2.0.3
 
 local f = {}
 ---@deprecated
@@ -823,7 +823,7 @@ end
 --- Returns an identical query treated as non-numerically-indexed.
 ---@return Query
 function f._proto:unordered()
-    if self.numeric then
+    if not self.numeric then
         error("Unordered is only supported on numerically-indexed tables", 2)
     end
     return f._wrap(self.next, false)
