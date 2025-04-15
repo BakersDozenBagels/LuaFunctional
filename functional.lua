@@ -1,7 +1,7 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 2.0.0
+---@version 2.0.1
 
 local f = {}
 ---@deprecated
@@ -966,7 +966,7 @@ function f.bind(func, ...)
     return function(...)
         local arg = { ... }
         for k, v in ipairs(args) do
-            arg[k] = v
+            table.insert(arg, 1, v)
         end
         return func(unpack(arg))
     end
