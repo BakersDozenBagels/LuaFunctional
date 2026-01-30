@@ -1,12 +1,12 @@
 ---@author BakersDozenBagels <business@gdane.net>
 ---@copyright (c) 2025 BakersDozenBagels
 ---@license GPL-3.0
----@version 2.0.3
+---@version 2.0.4
 
 local f = {}
 ---@deprecated
 f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use metatables and so should not be serialized.
-F = f -- export as global; change this line as desired
+F = f       -- export as global; change this line as desired
 
 -- Polyfill Lua 5.2 behavior for `pairs` and `ipairs`.
 local raw_pairs = pairs
@@ -55,7 +55,7 @@ end
 --- Performs a functional mapping.
 ---@param obj (table) The table to map over.
 ---@param func? (function(value, key) -> any) The mapping function. Defaults to `f.id`.
----@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
 function f.map(obj, func, f_pairs)
     func = func or f.id
     f_pairs = f_pairs or pairs
@@ -167,7 +167,7 @@ end
 --- Runs a function on every value in the table.
 ---@param obj (table) The table to use.
 ---@param func? (function(value, key) -> any) The function to run. Defaults to `f.id`.
----@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
 ---@return The original table unchanged.
 function f.foreach(obj, func, f_pairs)
     func = func or f.id
@@ -307,7 +307,7 @@ end
 --- Performs a functional mapping.
 ---@param obj (table) The table to map over.
 ---@param func? (function(value, key) -> any) The mapping function. Defaults to `f.id`.
----@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
 function f.lazy.map(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
 
@@ -466,7 +466,7 @@ f.lazy.index = f.index
 --- Eagerly runs a function on every value in the table.
 ---@param obj (table) The table to use.
 ---@param func? (function(value, key) -> any) The function to run. Defaults to `f.id`.
----@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`. 
+---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
 ---@return The original table unchanged.
 function f.lazy.foreach(obj, func, f_pairs)
     func = func or f.id
@@ -593,7 +593,7 @@ end
 ---@return Query<integer, U>
 function f._proto:zip(other, func)
     if not self.numeric or not other.numeric then error("Zipping is only supported on two numerically-indexed queries", 2) end
-    func = func or function(...) return {...} end
+    func = func or function(...) return { ... } end
     return f._wrap(function()
         local k1, v1 = self:next()
         local k2, v2 = other:next()
@@ -629,10 +629,15 @@ function f._proto:reduce(seed, func)
 end
 
 --- Returns the first truthy element, or false if none exist.
+---@param func? (function(value, key) -> bool) The predicate function.
 ---@return boolean
-function f._proto:any()
-    for _, v in self:pairs() do
-        if v then
+function f._proto:any(func)
+    for k, v in self:pairs() do
+        if func then
+            if func(v, k) then
+                return v
+            end
+        elseif v then
             return v
         end
     end
@@ -640,10 +645,15 @@ function f._proto:any()
 end
 
 --- Returns the first falsy element, or true if none exist.
+---@param func? (function(value, key) -> bool) The predicate function.
 ---@return boolean
-function f._proto:all()
-    for _, v in self:pairs() do
-        if not v then
+function f._proto:all(func)
+    for k, v in self:pairs() do
+        if func then
+            if not func(v, k) then
+                return v
+            end
+        elseif not v then
             return v
         end
     end
@@ -993,3 +1003,4 @@ function f.index_into(obj)
 end
 
 return f
+
