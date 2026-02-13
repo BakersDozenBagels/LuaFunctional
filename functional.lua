@@ -9,6 +9,7 @@ f.lazy = {} -- Lazily-evaluated versions of the functions. The return values use
 F = f       -- export as global; change this line as desired
 
 -- Polyfill Lua 5.2 behavior for `pairs` and `ipairs`.
+--- @alias pairs fun(table: table<any, any>, index?: any): any, any
 local raw_pairs = pairs
 pairs = function(t)
     local metatable = getmetatable(t)
@@ -30,6 +31,8 @@ end
 
 --- Returns the number of keys in `obj`.
 ---@param obj table
+---@return integer
+---@nodiscard
 function f.count(obj)
     local metatable = getmetatable(obj)
     if metatable and metatable.__len then
@@ -42,6 +45,8 @@ end
 ---@param min? integer The inclusive lower bound of the range. Defaults to `1`.
 ---@param max? integer The inclusive upper bound of the range. Defaults to `1`.
 ---@param step? integer The step between elements. Defaults to `1`.
+---@return table
+---@nodiscard
 function f.range(min, max, step)
     local ret = {}
     local ix = 1
@@ -53,9 +58,11 @@ function f.range(min, max, step)
 end
 
 --- Performs a functional mapping.
----@param obj (table) The table to map over.
----@param func? (function(value, key) -> any) The mapping function. Defaults to `f.id`.
+---@param obj table The table to map over.
+---@param func? (fun(value, key): any) The mapping function. Defaults to `f.id`.
 ---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.map(obj, func, f_pairs)
     func = func or f.id
     f_pairs = f_pairs or pairs
@@ -67,16 +74,18 @@ function f.map(obj, func, f_pairs)
 end
 
 --- Performs a functional reduction.
----@param obj (table) The table to reduce.
----@param seed? (any) The initial value for the accumulator. By default, uses the first value in `obj` (and skips reducing that index).
----@param func (function(accumulator, value, key) -> accumulator) The reduction function.
----@param f_ipairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@param obj table The table to reduce.
+---@param seed? any The initial value for the accumulator. By default, uses the first value in `obj` (and skips reducing that index).
+---@param func (fun(accumulator, value, key): any) The reduction function.
+---@param f_ipairs? (fun(table): function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@return any
+---@nodiscard
 function f.reduce(obj, seed, func, f_ipairs)
     f_ipairs = f_ipairs or ipairs
     local ret = seed
     local it, table, first = f_ipairs(obj)
     if not ret then
-        first, ret = it()
+        first, ret = it(table)
     end
     for k, v in it, table, first do
         ret = func(ret, v, k)
@@ -85,9 +94,11 @@ function f.reduce(obj, seed, func, f_ipairs)
 end
 
 --- Returns `true` if and only if `func(obj[k])` is truthy for any `k`. Otherwise, returns false.
----@param obj (table) The table to reduce.
----@param func? (function(value, key) -> bool) The predicate function.
----@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param obj table The table to reduce.
+---@param func? (fun(value, key): boolean) The predicate function.
+---@param f_pairs? (fun(table): function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@return boolean
+---@nodiscard
 function f.any(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
@@ -100,8 +111,10 @@ end
 
 --- Returns `true` if and only if `func(obj[k])` is truthy for all `k`. Otherwise, returns false.
 ---@param obj (table) The table to reduce.
----@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param func (fun(value, key): boolean) The predicate function.
+---@param f_pairs? (fun(table): function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@return boolean
+---@nodiscard
 function f.all(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
@@ -113,9 +126,11 @@ function f.all(obj, func, f_pairs)
 end
 
 --- Returns `true` if and only if `func(obj[k])` is falsy for all `k`. Otherwise, returns false.
----@param obj (table) The table to reduce.
----@param func? (function(value, key) -> bool) The predicate function.
----@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param obj table The table to reduce.
+---@param func? fun(value, key): boolean) The predicate function.
+---@param f_pairs? fun(table): function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@return boolean
+---@nodiscard
 function f.none(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     for k, v in f_pairs(obj) do
@@ -127,9 +142,11 @@ function f.none(obj, func, f_pairs)
 end
 
 --- Returns a new table with only the elements which pass a test.
----@param obj (table) The table to filter.
----@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param obj table The table to filter.
+---@param func fun(value, key): boolean) The predicate function.
+---@param f_pairs? fun(table): function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.filter(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -142,10 +159,12 @@ function f.filter(obj, func, f_pairs)
 end
 
 --- Returns a new table with only the elements in the specified inclusive range. Elements are renumbered.
----@param obj (table) The table to filter.
----@param start? (integer) The inclusive minimum index. Defaults to `1`.
----@param _end? (integer) The inclusive maximum index. Defaults to infinity.
----@param f_ipairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@param obj table The table to filter.
+---@param start? integer The inclusive minimum index. Defaults to `1`.
+---@param _end? integer The inclusive maximum index. Defaults to infinity.
+---@param f_ipairs? (fun(table): function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@return table
+---@nodiscard
 function f.slice(obj, start, _end, f_ipairs)
     f_ipairs = f_ipairs or ipairs
     start = start or 1
@@ -159,16 +178,46 @@ function f.slice(obj, start, _end, f_ipairs)
     return ret
 end
 
+--- Function that always performs no operation (no-op).
+function f.noop() end
+
 --- Identity function over any number of inputs.
+---@generic T
+---@param ... T
+---@return T
 function f.id(...)
     return ...
 end
 
+--- Function that always returns false.
+---@return false
+function f.fals()
+    return false
+end
+
+--- Function that always returns true.
+---@return true
+function f.tru()
+    return true
+end
+
+--- Creates a function that always returns the same values.
+---@generic T
+---@param ... T
+---@return fun(): T
+function f.const(...)
+    local args = { ... }
+
+    return function()
+        return unpack(args)
+    end
+end
+
 --- Runs a function on every value in the table.
----@param obj (table) The table to use.
----@param func? (function(value, key) -> any) The function to run. Defaults to `f.id`.
+---@param obj table The table to use.
+---@param func? (fun(value, key): any) The function to run. Defaults to `f.id`.
 ---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
----@return The original table unchanged.
+---@return table The original table unchanged.
 function f.foreach(obj, func, f_pairs)
     func = func or f.id
     f_pairs = f_pairs or pairs
@@ -179,10 +228,12 @@ function f.foreach(obj, func, f_pairs)
 end
 
 --- Merges two tables.
----@param a (table) The first table.
----@param b (table) The second table.
+---@param a table The first table.
+---@param b table The second table.
 ---@param f_pairs_a? pairs The method to iterate over `a`. Defaults to `pairs`.
 ---@param f_pairs_b? pairs The method to iterate over `b`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.merge(a, b, f_pairs_a, f_pairs_b)
     f_pairs_a = f_pairs_a or pairs
     f_pairs_b = f_pairs_b or pairs
@@ -197,10 +248,12 @@ function f.merge(a, b, f_pairs_a, f_pairs_b)
 end
 
 --- Concatenates two tables into a numerically-indexed table.
----@param a (table) The first table.
----@param b (table) The second table.
+---@param a table The first table.
+---@param b table The second table.
 ---@param f_ipairs_a? pairs The method to iterate over `a`. Defaults to `ipairs`.
 ---@param f_ipairs_b? pairs The method to iterate over `b`. Defaults to `ipairs`.
+---@return table
+---@nodiscard
 function f.concat(a, b, f_ipairs_a, f_ipairs_b)
     f_ipairs_a = f_ipairs_a or ipairs
     f_ipairs_b = f_ipairs_b or ipairs
@@ -218,8 +271,10 @@ function f.concat(a, b, f_ipairs_a, f_ipairs_b)
 end
 
 --- Returns the keys of a table indexed numerically.
----@param table (table) The table.
+---@param table table The table.
 ---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.keys(table, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -230,8 +285,10 @@ function f.keys(table, f_pairs)
 end
 
 --- Returns the values of a table indexed numerically.
----@param table (table) The table.
+---@param table table The table.
 ---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.values(table, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -243,8 +300,10 @@ end
 
 --- Returns the key-value pairs of a table indexed numerically.
 --- Each key-value pair is represented as `{ key, value, key=key, value=value }`.
----@param table (table) The table.
+---@param table table The table.
 ---@param f_pairs? pairs The method to iterate over `table`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.entries(table, f_pairs)
     f_pairs = f_pairs or pairs
     local ret = {}
@@ -265,6 +324,8 @@ end
 ---@param min? integer The inclusive lower bound of the range. Defaults to `1`.
 ---@param max? integer The inclusive upper bound of the range. Defaults to no upper bound.
 ---@param step? integer The step between elements. Defaults to `1`.
+---@return table
+---@nodiscard
 function f.lazy.range(min, max, step)
     min = min or 1
     step = step or 1
@@ -305,11 +366,14 @@ function f.lazy.range(min, max, step)
 end
 
 --- Performs a functional mapping.
----@param obj (table) The table to map over.
----@param func? (function(value, key) -> any) The mapping function. Defaults to `f.id`.
+---@param obj table The table to map over.
+---@param func? (fun(value, key): any) The mapping function. Defaults to `f.id`.
 ---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.lazy.map(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
+    func = func or f.id
 
     local mt, f_next
     mt = {
@@ -353,9 +417,11 @@ f.lazy.all = f.all
 f.lazy.none = f.none
 
 --- Returns a new table with only the elements which pass a test.
----@param obj (table) The table to filter.
----@param func (function(value, key) -> bool) The predicate function.
----@param f_pairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@param obj table The table to filter.
+---@param func (fun(value, key): boolean) The predicate function.
+---@param f_pairs? (fun(table): function, table, any) The method to iterate over `obj`. Defaults to `pairs`.
+---@return table
+---@nodiscard
 function f.lazy.filter(obj, func, f_pairs)
     f_pairs = f_pairs or pairs
 
@@ -401,11 +467,13 @@ function f.lazy.filter(obj, func, f_pairs)
 end
 
 --- Returns a new table with only the elements in the specified inclusive range. Elements are renumbered.
----@param obj (table) The table to filter.
----@param start? (integer) The inclusive minimum index. Defaults to `1`.
----@param _end? (integer) The inclusive maximum index. Defaults to infinity.
----@param f_ipairs? (function(table) -> function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
-function f.slice(obj, start, _end, f_ipairs)
+---@param obj table The table to filter.
+---@param start? integer The inclusive minimum index. Defaults to `1`.
+---@param _end? integer The inclusive maximum index. Defaults to infinity.
+---@param f_ipairs? (fun(table): function, table, any) The method to iterate over `obj`. Defaults to `ipairs`.
+---@return table
+---@nodiscard
+function f.lazy.slice(obj, start, _end, f_ipairs)
     f_ipairs = f_ipairs or pairs
     start = start or 1
     if _end then
@@ -464,10 +532,11 @@ f.lazy.count = f.count
 f.lazy.index = f.index
 
 --- Eagerly runs a function on every value in the table.
----@param obj (table) The table to use.
----@param func? (function(value, key) -> any) The function to run. Defaults to `f.id`.
+---@param obj table The table to use.
+---@param func? (fun(value, key): any) The function to run. Defaults to `f.id`.
 ---@param f_pairs? pairs The method to iterate over `obj`. Defaults to `pairs`.
----@return The original table unchanged.
+---@return table obj The original table unchanged.
+---@nodiscard
 function f.lazy.foreach(obj, func, f_pairs)
     func = func or f.id
     f_pairs = f_pairs or pairs
@@ -550,6 +619,7 @@ end
 ---@generic K, V, U
 ---@param func fun(value: V, key: K): U
 ---@return Query<K, U>
+---@nodiscard
 function f._proto:map(func)
     return f._wrap(function()
         local k, v = self:next()
@@ -564,6 +634,7 @@ end
 ---@generic K, V, U
 ---@param func fun(value: V, key: K): Query<K, U>
 ---@return Query<K, U>
+---@nodiscard
 function f._proto:flatmap(func)
     return self
         :map(func)
@@ -576,6 +647,7 @@ end
 ---@param other Query<K2, V2>
 ---@param func fun(v1: V1, v2: V2, k1: K1, k2: K2): U
 ---@return Query<integer, U>
+---@nodiscard
 function f._proto:join(other, func)
     local ret = {}
     for k1, v1 in self:pairs() do
@@ -591,6 +663,7 @@ end
 ---@param other Query<integer, V2>
 ---@param func? fun(v1: V1, v2: V2, k: integer): U Default to `function(...) return {...} end`
 ---@return Query<integer, U>
+---@nodiscard
 function f._proto:zip(other, func)
     if not self.numeric or not other.numeric then error("Zipping is only supported on two numerically-indexed queries", 2) end
     func = func or function(...) return { ... } end
@@ -610,6 +683,7 @@ end
 ---@param seed A|fun(a: A, b: V, k: K): A
 ---@param func? fun(a: A, b: V, k: K): A
 ---@return A
+---@nodiscard
 function f._proto:reduce(seed, func)
     local k, v
     if type(func) == 'nil' then
@@ -629,8 +703,9 @@ function f._proto:reduce(seed, func)
 end
 
 --- Returns the first truthy element, or false if none exist.
----@param func? (function(value, key) -> bool) The predicate function.
+---@param func? (fun(value, key): boolean) The predicate function.
 ---@return boolean
+---@nodiscard
 function f._proto:any(func)
     for k, v in self:pairs() do
         if func then
@@ -645,8 +720,9 @@ function f._proto:any(func)
 end
 
 --- Returns the first falsy element, or true if none exist.
----@param func? (function(value, key) -> bool) The predicate function.
+---@param func? (fun(value, key): boolean) The predicate function.
 ---@return boolean
+---@nodiscard
 function f._proto:all(func)
     for k, v in self:pairs() do
         if func then
@@ -664,6 +740,7 @@ end
 ---@generic K, V
 ---@param func? fun(v: V, k: K):boolean
 ---@return integer
+---@nodiscard
 function f._proto:count(func)
     local o = self
     if func then o = o:filter(func) end
@@ -675,6 +752,7 @@ end
 ---@generic K, V
 ---@param func fun(value: V, key: K): boolean
 ---@return Query<K, V>
+---@nodiscard
 function f._proto:filter(func)
     if not func then
         error("Expected a filter function", 2)
@@ -696,6 +774,7 @@ end
 --- Limits the query to the first n elements of the numerically-indexed collection.
 ---@param n integer
 ---@return Query
+---@nodiscard
 function f._proto:take(n)
     if not n or n < 0 then
         error("Expected non-negative number", 2)
@@ -714,6 +793,7 @@ end
 --- Skips the first n elements of the numerically-indexed collection.
 ---@param n integer
 ---@return Query
+---@nodiscard
 function f._proto:skip(n)
     if not self.numeric then
         error("Skip is only supported for numerically-indexed tables", 2)
@@ -734,16 +814,20 @@ end
 --- Runs a function on every element in the collection in encounter order.
 ---@generic K, V
 ---@param func fun(value: V, key: K)
+---@return Query<K, V>
 function f._proto:foreach(func)
     for k, v in self:pairs() do
         func(v, k)
     end
+
+    return self
 end
 
 --- Appends another query to this one.
 ---@see f.q_concat
 ---@param other Query
 ---@return Query
+---@nodiscard
 function f._proto:prepend(other)
     return f.q_concat(other, self)
 end
@@ -752,6 +836,7 @@ end
 ---@see f.q_concat
 ---@param other Query
 ---@return Query
+---@nodiscard
 function f._proto:append(other)
     return f.q_concat(self, other)
 end
@@ -762,6 +847,7 @@ end
 ---@param a Query
 ---@param b Query
 ---@return Query
+---@nodiscard
 function f.q_concat(a, b)
     local ix, swap = 0, false
     return f._wrap(function()
@@ -780,6 +866,7 @@ end
 --- Returns a numerically-indexed query of this non-numerically-indexed query's keys.
 ---@generic K
 ---@return Query<integer, K>
+---@nodiscard
 function f._proto:keys()
     if self.numeric then
         error("Keys is not supported on numerically-indexed tables", 2)
@@ -797,6 +884,7 @@ end
 --- Returns a numerically-indexed query of this non-numerically-indexed query's values.
 ---@generic V
 ---@return Query<integer, V>
+---@nodiscard
 function f._proto:values()
     if self.numeric then
         error("Values is not supported on numerically-indexed tables", 2)
@@ -814,6 +902,7 @@ end
 --- Returns a numerically-indexed query of this query's key-value pairs.
 ---@generic K, V
 ---@return Query<integer, {[1]:K, [2]:V, k: K, v: V}>
+---@nodiscard
 function f._proto:entries()
     local ix = 0
     return f._wrap(function()
@@ -832,6 +921,7 @@ end
 
 --- Returns an identical query treated as non-numerically-indexed.
 ---@return Query
+---@nodiscard
 function f._proto:unordered()
     if not self.numeric then
         error("Unordered is only supported on numerically-indexed tables", 2)
@@ -841,6 +931,7 @@ end
 
 --- Returns an identical query treated as numerically-indexed.
 ---@return Query
+---@nodiscard
 function f._proto:ordered()
     if self.numeric then
         error("Ordered is not supported on numerically-indexed tables", 2)
@@ -852,6 +943,7 @@ end
 ---@generic K, V
 ---@param func fun(v1: V, v2: V, k1: K, k2: K): boolean Less than function
 ---@return Query<K, V>
+---@nodiscard
 function f._proto:sorted(func)
     local q = self.numeric and self:unordered() or self
     local t = q:entries():into()
@@ -869,6 +961,7 @@ end
 --- Joins the strings together with an optional separator.
 ---@param separator? string
 ---@return string
+---@nodiscard
 function f._proto:conjoin(separator)
     separator = separator or ''
     ---@type string
@@ -877,6 +970,7 @@ end
 
 --- Converts the query to a string. Helpful for debugging.
 ---@return string
+---@nodiscard
 function f._proto:tostring()
     return '{ ' .. self:map(function(v, k)
         return '[' .. tostring(k) .. '] = ' .. tostring(v)
@@ -887,6 +981,7 @@ end
 
 --- Converts the query to a table.
 ---@return table
+---@nodiscard
 function f._proto:into()
     local ret = {}
     for k, v in self.next do
@@ -898,6 +993,7 @@ end
 --- Gets the iterator for this query.
 ---@generic K, V
 ---@return fun():K, V
+---@nodiscard
 function f._proto:pairs()
     return self.next
 end
@@ -908,6 +1004,7 @@ f._proto.ipairs = f._proto.pairs
 ---@param func Next
 ---@param numeric boolean
 ---@return Query
+---@nodiscard
 function f._wrap(func, numeric)
     local val = {
         next = func,
@@ -926,6 +1023,7 @@ end
 ---@param f_pairs fun(t: table):unknown
 ---@param numeric boolean
 ---@return Query
+---@nodiscard
 function f.from(obj, f_pairs, numeric)
     local next, t, k = f_pairs(obj)
     local v
@@ -938,6 +1036,7 @@ end
 --- Creates a non-numerically-indexed query from the given table.
 ---@param obj table
 ---@return Query
+---@nodiscard
 function f.pairs(obj)
     return f.from(obj, pairs, false)
 end
@@ -945,6 +1044,7 @@ end
 --- Creates a numerically-indexed query from the given table.
 ---@param obj table
 ---@return Query
+---@nodiscard
 function f.ipairs(obj)
     return f.from(obj, ipairs, true)
 end
@@ -954,6 +1054,7 @@ end
 ---@param _end? integer
 ---@param step? integer
 ---@return Query
+---@nodiscard
 function f.from_range(start, _end, step)
     start = start or 1
     _end = _end or 1
@@ -973,6 +1074,7 @@ end
 ---@param func fun(...):T
 ---@param ... any
 ---@return fun(...):T
+---@nodiscard
 function f.bind(func, ...)
     local args = { ... }
     return function(...)
@@ -987,6 +1089,7 @@ end
 --- Returns x -> x[ix]
 ---@param ix any
 ---@return fun(any): any
+---@nodiscard
 function f.index(ix)
     return function(x)
         return x[ix]
@@ -996,6 +1099,7 @@ end
 --- Returns x -> obj[x]
 ---@param obj any
 ---@return fun(any): any
+---@nodiscard
 function f.index_into(obj)
     return function(x)
         return obj[x]
